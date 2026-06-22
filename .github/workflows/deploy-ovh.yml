@@ -1,0 +1,77 @@
+name: Deploy Aphalone RPG
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-aphalone-rpg-ovh
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy RPG to Nitro via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate JS syntax (block deploy on parse errors)
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            if ! node --check "$f" 2>/tmp/jscheck.err; then
+              echo "::error file=$f::Erreur de syntaxe JS"
+              sed 's/^/    /' /tmp/jscheck.err
+              fail=1
+            fi
+          done < <(find . -name '*.js' -not -path './.git/*' -not -path './.github/*' -not -path './node_modules/*')
+          if [ "$fail" -ne 0 ]; then
+            echo "Déploiement bloqué : au moins un fichier JS ne parse pas."
+            exit 1
+          fi
+          echo "✅ Tous les fichiers JS passent le contrôle de syntaxe."
+
+      - name: Add deployment marker
+        run: |
+          echo "{}" | jq \
+            --arg commit "${GITHUB_SHA:0:7}" \
+            --arg commitFull "${GITHUB_SHA}" \
+            --arg message "$(git log -1 --format='%s')" \
+            --arg branch "${GITHUB_REF_NAME}" \
+            --arg runId "${GITHUB_RUN_ID}" \
+            --arg runNumber "${GITHUB_RUN_NUMBER}" \
+            --arg deployedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            '. + {commit:$commit,commitFull:$commitFull,message:$message,branch:$branch,runId:$runId,runNumber:$runNumber,deployedAt:$deployedAt}' \
+            > deploy-info.json
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.OVH_SSH_KEY }}" > ~/.ssh/ovh_key
+          chmod 600 ~/.ssh/ovh_key
+          ssh-keyscan -H "${{ secrets.OVH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Ensure remote target directory exists
+        run: |
+          ssh -i ~/.ssh/ovh_key "${{ secrets.OVH_USER }}@${{ secrets.OVH_HOST }}" "mkdir -p ~/nitro/rpg"
+
+      - name: Deploy to Nitro with rsync
+        run: |
+          rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='README.md' \
+            --exclude='docs/' \
+            -e "ssh -i ~/.ssh/ovh_key" \
+            ./ "${{ secrets.OVH_USER }}@${{ secrets.OVH_HOST }}:~/nitro/rpg/"
