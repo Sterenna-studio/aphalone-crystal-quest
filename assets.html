@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aphalone — Asset Browser</title>
+  <link rel="stylesheet" href="assets.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <div class="header__title">
+        <span class="header__game">Aphalone — Crystal Quest</span>
+        <span class="header__sub">Asset Browser · <em>Prototype</em></span>
+      </div>
+      <nav class="header__nav">
+        <a href="index.html" class="btn btn--ghost">← Jouer au prototype</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="toolbar">
+      <div class="toolbar__filters" role="group" aria-label="Filtrer par catégorie">
+        <button class="filter-btn filter-btn--active" data-category="all">Tous</button>
+        <button class="filter-btn" data-category="portraits">Portraits</button>
+        <button class="filter-btn" data-category="walk">Walk frames</button>
+      </div>
+      <div class="toolbar__search">
+        <input
+          type="search"
+          id="search"
+          class="search-input"
+          placeholder="Rechercher un asset…"
+          aria-label="Rechercher un asset"
+        />
+      </div>
+      <div class="toolbar__info">
+        <span id="asset-count" class="asset-count"></span>
+      </div>
+    </section>
+
+    <section class="walk-preview" id="walk-preview" aria-label="Aperçu animation marche">
+      <h2 class="walk-preview__title">Aperçu animation — Walk cycle</h2>
+      <div class="walk-preview__stage">
+        <canvas id="walk-canvas" width="96" height="96"></canvas>
+        <div class="walk-preview__controls">
+          <button class="btn btn--sm" id="walk-play">⏸ Pause</button>
+          <label class="walk-preview__fps">
+            FPS :
+            <input type="range" id="walk-fps" min="4" max="24" value="10" />
+            <span id="walk-fps-val">10</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery" aria-label="Galerie des assets">
+      <div class="grid" id="grid"></div>
+    </section>
+  </main>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Aperçu asset" hidden>
+    <button class="lightbox__close" id="lightbox-close" aria-label="Fermer">&times;</button>
+    <button class="lightbox__nav lightbox__nav--prev" id="lightbox-prev" aria-label="Précédent">&#8592;</button>
+    <div class="lightbox__content">
+      <img class="lightbox__img" id="lightbox-img" src="" alt="" />
+      <div class="lightbox__meta" id="lightbox-meta"></div>
+    </div>
+    <button class="lightbox__nav lightbox__nav--next" id="lightbox-next" aria-label="Suivant">&#8594;</button>
+  </div>
+  <div class="lightbox__backdrop" id="lightbox-backdrop" hidden></div>
+
+  <script src="assets.js"></script>
+</body>
+</html>
